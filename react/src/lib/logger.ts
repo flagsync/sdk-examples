@@ -44,6 +44,7 @@ export class CustomLogger implements ILogger {
     this.shouldLog = this.shouldLog.bind(this);
     this.notifyListeners = this.notifyListeners.bind(this);
     this.subscribe = this.subscribe.bind(this);
+    this.getSnapshot = this.getSnapshot.bind(this);
   }
 
   setLogLevel(logLevel: LogLevel): void {
@@ -67,7 +68,9 @@ export class CustomLogger implements ILogger {
 
     console.log(`[${timestamp} ${level}] `, message, ...optionalParams);
 
-    this.logs.push(logEntry);
+    // Replace the array (rather than mutating it) so subscribers using
+    // useSyncExternalStore see a new snapshot reference and re-render.
+    this.logs = [...this.logs, logEntry];
     this.notifyListeners();
   }
 
@@ -75,9 +78,16 @@ export class CustomLogger implements ILogger {
     this.listeners.forEach((listener) => listener(this.logs));
   }
 
+  /**
+   * Returns the current snapshot of logs. The reference only changes when a
+   * new entry is added, which is what useSyncExternalStore relies on.
+   */
+  public getSnapshot(): LogEntry[] {
+    return this.logs;
+  }
+
   public subscribe(listener: (logs: LogEntry[]) => void): () => void {
     this.listeners.push(listener);
-    listener(this.logs);
     return () => {
       this.listeners = this.listeners.filter((l) => l !== listener);
     };

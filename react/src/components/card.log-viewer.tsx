@@ -1,8 +1,14 @@
 import { LogLevel } from '@flagsync/react-sdk';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { Laptop } from 'lucide-react';
 
-import { logger, LogEntry } from '@/lib/logger';
+import { logger } from '@/lib/logger';
 
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -16,14 +22,8 @@ import {
 } from '@/components/ui/select';
 
 export const CardLogViewer = () => {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const logs = useSyncExternalStore(logger.subscribe, logger.getSnapshot);
   const logContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    return logger.subscribe((newLogs: LogEntry[]) => {
-      setLogs([...newLogs]);
-    });
-  }, []);
 
   useEffect(() => {
     if (logContainerRef.current) {
